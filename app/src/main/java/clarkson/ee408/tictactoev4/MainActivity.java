@@ -14,15 +14,21 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class MainActivity extends AppCompatActivity {
     private TicTacToe tttGame;
     private Button[][] buttons;
     private TextView status;
+    private Gson gson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tttGame = new TicTacToe();
+        this.gson = new GsonBuilder().serializeNulls().create();
+
         buildGuiByCode();
     }
 
