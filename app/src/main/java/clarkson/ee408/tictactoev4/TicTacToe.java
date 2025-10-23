@@ -2,8 +2,8 @@ package clarkson.ee408.tictactoev4;
 
 public class TicTacToe {
     public static final int SIDE = 3;
+    private final int[][] game;
     private int turn;
-    private int[][] game;
 
     public TicTacToe() {
         game = new int[SIDE][SIDE];
