@@ -117,4 +117,13 @@ public class TicTacToe {
     public void setPlayer(int player) {
         this.player = player;
     }
+
+    /**
+     * Gets which player number currently owns the board and can make a move.
+     *
+     * @return the owner of the board
+     */
+    public int getTurn() {
+        return this.turn;
+    }
 }
