@@ -4,9 +4,17 @@ public class TicTacToe {
     public static final int SIDE = 3;
     private final int[][] game;
     private int turn;
+    private int player;
 
-    public TicTacToe() {
-        game = new int[SIDE][SIDE];
+    /**
+     * Creates a new TicTacToe game board with the given {@code player}.
+     *
+     * @param player the initial player number
+     */
+    public TicTacToe(int player) {
+        this.game = new int[SIDE][SIDE];
+        this.player = player;
+
         resetGame();
     }
 
@@ -90,5 +98,23 @@ public class TicTacToe {
             return "Tie Game";
         else
             return "PLAY !!";
+    }
+
+    /**
+     * Return the current player number.
+     *
+     * @return the player number
+     */
+    public int getPlayer() {
+        return this.player;
+    }
+
+    /**
+     * Set the player number.
+     *
+     * @param player the new player number
+     */
+    public void setPlayer(int player) {
+        this.player = player;
     }
 }

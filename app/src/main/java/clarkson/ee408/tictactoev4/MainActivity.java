@@ -18,6 +18,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int STARTING_PLAYER_NUMBER = 1;
+
     private TicTacToe tttGame;
     private Button[][] buttons;
     private TextView status;
@@ -26,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        tttGame = new TicTacToe();
+        tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
 
         buildGuiByCode();
