@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
+        this.tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
 
         // Initialize SocketClient
@@ -45,69 +46,10 @@ public class MainActivity extends AppCompatActivity {
         myPlayerNumber = 1; /
 
         buildGuiByCode();
-        updateTurnStatus();
-    }
 
-    /**
-     * Sends a request to the server to ask for a game move made by the other player.
-     */
-    public void requestMove() {
-        if (!shouldRequestMove) {
-            return; // Only request moves when it's our turn
-        }
-
-        // Create Request object with type REQUEST_MOVE
-        Request request = new Request();
-        request.setType(RequestType.REQUEST_MOVE);
-        // You might want to include game state or player info
-        request.setData(""); // Add any necessary data
-
-        // Use SocketClient to send request in networkIO thread
-        AppExecutors.getInstance().networkIO().execute(() -> {
-            try {
-                Response response = socketClient.sendRequest(request);
-
-                // Process response in main thread
-                AppExecutors.getInstance().mainThread().execute(() -> {
-                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
-                        // Parse the move from response
-                        Move move = gson.fromJson(response.getData(), Move.class);
-                        if (move != null && isValidMove(move)) {
-                            // Utilize update() function to add changes to the board
-                            update(move.getRow(), move.getCol());
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                Log.e("MainActivity", "Error requesting move", e);
-            }
-        });
-    }
-
-    private boolean isValidMove(Move move) {
-        return move != null &&
-                move.getRow() >= 0 && move.getRow() < TicTacToe.SIDE &&
-                move.getCol() >= 0 && move.getCol() < TicTacToe.SIDE &&
-                tttGame.getBoard()[move.getRow()][move.getCol()] == 0;
-    }
-
-    private boolean isMyTurn() {
-        return tttGame.getCurrentPlayer() == myPlayerNumber;;
-    }
-
-    private void updateTurnStatus() {
-        runOnUiThread(() -> {
-            if (isMyTurn()) {
-                status.setText("Your Turn");
-                shouldRequestMove = false;
-                enableButtons(true);
-                requestMove();
-            } else {
-                status.setText("Waiting for Opponent");
-                shouldRequestMove = true;
-                enableButtons(false);
-            }
-        });
+        Handler handler = new Handler();
+        GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
+        handler.post(runnable);
     }
 
     public void buildGuiByCode() {
