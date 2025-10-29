@@ -72,6 +72,7 @@ public final class SocketClient {
             // Serialize the request to JSON and send it to the server
             String requestJson = this.gson.toJson(request);
             this.outputStream.writeUTF(requestJson);
+            this.outputStream.flush();
 
             // Wait for a JSON response
             String response = this.inputStream.readUTF();
