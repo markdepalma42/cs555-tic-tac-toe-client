@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -33,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
         this.gson = new GsonBuilder().serializeNulls().create();
 
         buildGuiByCode();
+
+        Handler handler = new Handler();
+        GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
+        handler.post(runnable);
     }
 
     public void buildGuiByCode() {
