@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private Button[][] buttons;
     private TextView status;
     private Gson gson;
+    private boolean shouldRequestMove = false;
+    private int myPlayerNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +34,31 @@ public class MainActivity extends AppCompatActivity {
         tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
 
+        // TODO: Initialize myPlayerNumber based on server assignment
+        // This should come from your socket connection/login
+        myPlayerNumber = 1; /
+
         buildGuiByCode();
+        updateTurnStatus();
+    }
+
+    private boolean isMyTurn() {
+        // Assuming player 1 is "you" - adjust this logic based on the setup
+        return tttGame.getCurrentPlayer() == myPlayerNumber;;
+    }
+
+    private void updateTurnStatus() {
+        runOnUiThread(() -> {
+            if (isMyTurn()) {
+                status.setText("Your Turn");
+                shouldRequestMove = true;
+                enableButtons(true);
+            } else {
+                status.setText("Waiting for Opponent");
+                shouldRequestMove = false;
+                enableButtons(false);
+            }
+        });
     }
 
     public void buildGuiByCode() {
@@ -104,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
             status.setText(tttGame.result());
             showNewGameDialog();    // offer to play again
         }
+        updateTurnStatus();
     }
 
     public void enableButtons(boolean enabled) {
@@ -147,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 resetButtons();
                 status.setBackgroundColor(Color.GREEN);
                 status.setText(tttGame.result());
+                updateTurnStatus();
             } else if (id == -2) // NO button
                 MainActivity.this.finish();
         }
