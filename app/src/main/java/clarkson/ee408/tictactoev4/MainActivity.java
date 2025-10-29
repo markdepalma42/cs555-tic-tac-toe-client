@@ -27,9 +27,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView status;
     private Gson gson;
     private boolean shouldRequestMove = false;
-    private int myPlayerNumber;
-
-    // ADD SocketClient instance
     private SocketClient socketClient;
 
     @Override
@@ -37,19 +34,63 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         this.tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
-
-        // Initialize SocketClient
         socketClient = SocketClient.getInstance();
 
-        // TODO: Initialize myPlayerNumber based on server assignment
-        // This should come from your socket connection/login
-        myPlayerNumber = 1; /
-
         buildGuiByCode();
+        updateTurnStatus();
 
         Handler handler = new Handler();
         GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
         handler.post(runnable);
+    }
+
+    private void updateTurnStatus() {
+        runOnUiThread(() -> {
+            if (isMyTurn()) {
+                status.setText("Your Turn");
+                shouldRequestMove = false;
+                enableButtons(true);
+                requestMove();
+            } else {
+                status.setText("Waiting for Opponent");
+                shouldRequestMove = true;
+                enableButtons(false);
+            }
+        });
+    }
+
+    private boolean isMyTurn() {
+        return this.tttGame.getPlayer() != this.tttGame.getTurn();
+    }
+
+    private boolean isValidMove(Move move) {
+        return move != null && 
+               move.getRow() >= 0 && move.getRow() < TicTacToe.SIDE &&
+               move.getCol() >= 0 && move.getCol() < TicTacToe.SIDE &&
+               tttGame.getBoard()[move.getRow()][move.getCol()] == 0;
+    }
+
+    private void requestMove() {
+        // Create Request object with type REQUEST_MOVE
+        Request request = new Request();
+        request.setType(RequestType.REQUEST_MOVE);
+        
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = socketClient.sendRequest(request);
+                
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Move move = gson.fromJson(response.getData(), Move.class);
+                        if (move != null && isValidMove(move)) {
+                            update(move.getRow(), move.getCol());
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error requesting move", e);
+            }
+        });
     }
 
     public void buildGuiByCode() {
