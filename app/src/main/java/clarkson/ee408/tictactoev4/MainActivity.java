@@ -48,7 +48,10 @@ public class MainActivity extends AppCompatActivity {
         updateTurnStatus();
     }
 
-    private void requestMove() {
+    /**
+     * Sends a request to the server to ask for a game move made by the other player.
+     */
+    public void requestMove() {
         if (!shouldRequestMove) {
             return; // Only request moves when it's our turn
         }
@@ -96,12 +99,12 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             if (isMyTurn()) {
                 status.setText("Your Turn");
-                shouldRequestMove = true;
+                shouldRequestMove = false;
                 enableButtons(true);
                 requestMove();
             } else {
                 status.setText("Waiting for Opponent");
-                shouldRequestMove = false;
+                shouldRequestMove = true;
                 enableButtons(false);
             }
         });
