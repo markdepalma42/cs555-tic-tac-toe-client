@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isMyTurn() {
-        // Assuming player 1 is "you" - adjust this logic based on the setup
         return tttGame.getCurrentPlayer() == myPlayerNumber;;
     }
 
