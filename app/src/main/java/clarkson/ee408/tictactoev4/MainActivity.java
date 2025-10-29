@@ -44,6 +44,50 @@ public class MainActivity extends AppCompatActivity {
         handler.post(runnable);
     }
 
+    private void requestMove() {
+        if (!shouldRequestMove) {
+            return; // Only request moves when it's our turn
+        }
+
+        // Create Request object with type REQUEST_MOVE
+        Request request = new Request();
+        request.setType(RequestType.REQUEST_MOVE);
+        // You might want to include game state or player info
+        request.setData(""); // Add any necessary data
+
+        // Use SocketClient to send request in networkIO thread
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = socketClient.sendRequest(request);
+
+                // Process response in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        // Parse the move from response
+                        Move move = gson.fromJson(response.getData(), Move.class);
+                        if (move != null && isValidMove(move)) {
+                            // Utilize update() function to add changes to the board
+                            update(move.getRow(), move.getCol());
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error requesting move", e);
+            }
+        });
+    }
+
+    private boolean isValidMove(Move move) {
+        return move != null && 
+               move.getRow() >= 0 && move.getRow() < TicTacToe.SIDE &&
+               move.getCol() >= 0 && move.getCol() < TicTacToe.SIDE &&
+               tttGame.getBoard()[move.getRow()][move.getCol()] == 0;
+    }
+
+     private boolean isMyTurn() {
+        return this.tttGame.getPlayer() != this.tttGame.getTurn();
+    }
+
     private void updateTurnStatus() {
         runOnUiThread(() -> {
             if (isMyTurn()) {
@@ -55,40 +99,6 @@ public class MainActivity extends AppCompatActivity {
                 status.setText("Waiting for Opponent");
                 shouldRequestMove = true;
                 enableButtons(false);
-            }
-        });
-    }
-
-    private boolean isMyTurn() {
-        return this.tttGame.getPlayer() != this.tttGame.getTurn();
-    }
-
-    private boolean isValidMove(Move move) {
-        return move != null && 
-               move.getRow() >= 0 && move.getRow() < TicTacToe.SIDE &&
-               move.getCol() >= 0 && move.getCol() < TicTacToe.SIDE &&
-               tttGame.getBoard()[move.getRow()][move.getCol()] == 0;
-    }
-
-    private void requestMove() {
-        // Create Request object with type REQUEST_MOVE
-        Request request = new Request();
-        request.setType(RequestType.REQUEST_MOVE);
-        
-        AppExecutors.getInstance().networkIO().execute(() -> {
-            try {
-                Response response = socketClient.sendRequest(request);
-                
-                AppExecutors.getInstance().mainThread().execute(() -> {
-                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
-                        Move move = gson.fromJson(response.getData(), Move.class);
-                        if (move != null && isValidMove(move)) {
-                            update(move.getRow(), move.getCol());
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                Log.e("MainActivity", "Error requesting move", e);
             }
         });
     }
