@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private Button[][] buttons;
     private TextView status;
     private Gson gson;
-    private boolean shouldRequestMove = false;
+    private boolean shouldRequestMove;
     private SocketClient socketClient;
 
     @Override
@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         this.tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
         socketClient = SocketClient.getInstance();
+        shouldRequestMove = false;
 
         buildGuiByCode();
         updateTurnStatus();
@@ -44,7 +45,10 @@ public class MainActivity extends AppCompatActivity {
         handler.post(runnable);
     }
 
-    private void requestMove() {
+    /**
++   * Sends a request to the server to ask for a game move made by the other player.
++   */
+    public void requestMove() {
         if (!shouldRequestMove) {
             return; // Only request moves when it's our turn
         }
