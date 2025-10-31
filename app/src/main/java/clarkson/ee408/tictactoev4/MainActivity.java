@@ -4,6 +4,7 @@ import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.socket.Request;
 import clarkson.ee408.tictactoev4.socket.RequestType;
 import clarkson.ee408.tictactoev4.socket.Response;
+import clarkson.ee408.tictactoev4.socket.GamingResponse;
 
 import android.content.DialogInterface;
 import android.graphics.Color;
@@ -51,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-+   * Sends a request to the server to ask for a game move made by the other player.
-+   */
+  * Sends a request to the server to ask for a game move made by the other player.
+   */
     public void requestMove() {
         if (!shouldRequestMove) {
             return; // Only request moves when it's our turn
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Process response in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
-                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                    if (response != null && response.getStatus() == Response.ResponseStatus.SUCCESS) {
                         // Get the move from GamingResponse (already parsed)
                         int moveValue = response.getMove();
 
@@ -81,11 +82,8 @@ public class MainActivity extends AppCompatActivity {
                             int row = moveValue / TicTacToe.SIDE;
                             int col = moveValue % TicTacToe.SIDE;
 
-                            // Check if the position is available
-                            if (tttGame.getBoard()[row][col] == 0) {
-                                // Utilize update() function to add changes to the board
-                                update(row, col);
-                            }
+                            // Utilize update() function to add changes to the board
+                            update(row, col);
                         }
                     }
                 });
@@ -96,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
      private boolean isMyTurn() {
-        return this.tttGame.getPlayer() != this.tttGame.getTurn();
+        return this.tttGame.getPlayer() == this.tttGame.getTurn();
     }
 
     private void updateTurnStatus() {
