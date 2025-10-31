@@ -23,7 +23,7 @@ import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.socket.GamingResponse;
 import clarkson.ee408.tictactoev4.socket.Request;
 import clarkson.ee408.tictactoev4.socket.RequestType;
-import clarkson.ee408.tictactoev4.socket.Response;
+import clarkson.ee408.tictactoev4.socket.ResponseStatus;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Process response in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
-                    if (response != null && response.getStatus() == Response.ResponseStatus.SUCCESS) {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
                         // Get the move from GamingResponse (already parsed)
                         int moveValue = response.getMove();
 
