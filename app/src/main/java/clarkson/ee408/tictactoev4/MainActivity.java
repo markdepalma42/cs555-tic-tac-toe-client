@@ -1,4 +1,10 @@
 package clarkson.ee408.tictactoev4;
+import clarkson.ee408.tictactoev4.client.AppExecutors;
+import clarkson.ee408.tictactoev4.client.SocketClient;
+import clarkson.ee408.tictactoev4.socket.Request;
+import clarkson.ee408.tictactoev4.socket.RequestType;
+import clarkson.ee408.tictactoev4.socket.Response;
+import clarkson.ee408.tictactoev4.socket.GamingResponse;
 
 import android.content.DialogInterface;
 import android.graphics.Color;
@@ -26,18 +32,84 @@ public class MainActivity extends AppCompatActivity {
     private Button[][] buttons;
     private TextView status;
     private Gson gson;
+    private boolean shouldRequestMove;
+    private SocketClient socketClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
         this.gson = new GsonBuilder().serializeNulls().create();
+        socketClient = SocketClient.getInstance();
+        shouldRequestMove = false;
 
         buildGuiByCode();
+        updateTurnStatus();
 
         Handler handler = new Handler();
         GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
         handler.post(runnable);
+    }
+
+    /**
+     * Sends a request to the server to ask for a game move made by the other player.
+     */
+    public void requestMove() {
+        if (!shouldRequestMove) {
+            return; // Only request moves when it's our turn
+        }
+
+        // Create Request object with type REQUEST_MOVE
+        Request request = new Request();
+        request.setType(RequestType.REQUEST_MOVE);
+        // You might want to include game state or player info
+        request.setData(""); // Add any necessary data
+
+        // Use SocketClient to send request in networkIO thread
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+
+                // Process response in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == Response.ResponseStatus.SUCCESS) {
+                        // Get the move from GamingResponse (already parsed)
+                        int moveValue = response.getMove();
+
+                        // Validate move value
+                        if (moveValue >= 0 && moveValue < TicTacToe.SIDE * TicTacToe.SIDE) {
+                            // Convert single integer move to row and column
+                            int row = moveValue / TicTacToe.SIDE;
+                            int col = moveValue % TicTacToe.SIDE;
+
+                            // Utilize update() function to add changes to the board
+                            update(row, col);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error requesting move", e);
+            }
+        });
+    }
+
+    private boolean isMyTurn() {
+        return this.tttGame.getPlayer() == this.tttGame.getTurn();
+    }
+
+    private void updateTurnStatus() {
+        runOnUiThread(() -> {
+            if (isMyTurn()) {
+                status.setText("Your Turn");
+                shouldRequestMove = false;
+                enableButtons(true);
+                requestMove();
+            } else {
+                status.setText("Waiting for Opponent");
+                shouldRequestMove = true;
+                enableButtons(false);
+            }
+        });
     }
 
     public void buildGuiByCode() {
@@ -109,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
             status.setText(tttGame.result());
             showNewGameDialog();    // offer to play again
         }
+        updateTurnStatus();
     }
 
     public void enableButtons(boolean enabled) {
@@ -152,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
                 resetButtons();
                 status.setBackgroundColor(Color.GREEN);
                 status.setText(tttGame.result());
+                updateTurnStatus();
             } else if (id == -2) // NO button
                 MainActivity.this.finish();
         }
