@@ -23,7 +23,7 @@ public final class SocketClient {
 
     private static final Object CONNECTION_LOCK_OBJECT = new Object();
     private static final Object LOCK_OBJECT = new Object();
-    private static final String SERVER_HOST = "127.0.0.1";
+    private static final String SERVER_HOST = "10.0.2.2";
     private static final int SERVER_PORT = 5000;
     private static final int SOCKET_TIMEOUT = 10000; // 10 seconds
     private static final String TAG = "SocketClient";
