@@ -52,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-  * Sends a request to the server to ask for a game move made by the other player.
-   */
+     * Sends a request to the server to ask for a game move made by the other player.
+     */
     public void requestMove() {
         if (!shouldRequestMove) {
             return; // Only request moves when it's our turn
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-     private boolean isMyTurn() {
+    private boolean isMyTurn() {
         return this.tttGame.getPlayer() == this.tttGame.getTurn();
     }
 
