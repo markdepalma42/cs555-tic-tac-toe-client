@@ -67,16 +67,25 @@ public class MainActivity extends AppCompatActivity {
         // Use SocketClient to send request in networkIO thread
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                Response response = socketClient.sendRequest(request);
+                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
 
                 // Process response in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
                     if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
-                        // Parse the move from response
-                        Move move = gson.fromJson(response.getData(), Move.class);
-                        if (move != null && isValidMove(move)) {
-                            // Utilize update() function to add changes to the board
-                            update(move.getRow(), move.getCol());
+                        // Get the move from GamingResponse (already parsed)
+                        int moveValue = response.getMove();
+
+                        // Validate move value
+                        if (moveValue >= 0 && moveValue < TicTacToe.SIDE * TicTacToe.SIDE) {
+                            // Convert single integer move to row and column
+                            int row = moveValue / TicTacToe.SIDE;
+                            int col = moveValue % TicTacToe.SIDE;
+
+                            // Check if the position is available
+                            if (tttGame.getBoard()[row][col] == 0) {
+                                // Utilize update() function to add changes to the board
+                                update(row, col);
+                            }
                         }
                     }
                 });
@@ -84,13 +93,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("MainActivity", "Error requesting move", e);
             }
         });
-    }
-
-    private boolean isValidMove(Move move) {
-        return move != null && 
-               move.getRow() >= 0 && move.getRow() < TicTacToe.SIDE &&
-               move.getCol() >= 0 && move.getCol() < TicTacToe.SIDE &&
-               tttGame.getBoard()[move.getRow()][move.getCol()] == 0;
     }
 
      private boolean isMyTurn() {
