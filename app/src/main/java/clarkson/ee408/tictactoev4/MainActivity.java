@@ -1,4 +1,9 @@
 package clarkson.ee408.tictactoev4;
+import clarkson.ee408.tictactoev4.client.AppExecutors;
+import clarkson.ee408.tictactoev4.client.SocketClient;
+import clarkson.ee408.tictactoev4.socket.Request;
+import clarkson.ee408.tictactoev4.socket.RequestType;
+import clarkson.ee408.tictactoev4.socket.Response;
 
 import android.content.DialogInterface;
 import android.graphics.Color;
