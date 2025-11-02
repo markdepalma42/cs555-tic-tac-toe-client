@@ -222,6 +222,9 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(DialogInterface dialog, int id) {
             if (id == -1) /* YES button */ {
                 tttGame.resetGame();
+                int currentPlayer = tttGame.getPlayer();
+                int nextPlayer = (currentPlayer == 1) ? 2 : 1;
+                tttGame.setPlayer(nextPlayer);
                 enableButtons(true);
                 resetButtons();
                 status.setBackgroundColor(Color.GREEN);
