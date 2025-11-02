@@ -94,6 +94,39 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Sends the player's move to the server.
+     * @param move The move position (0-8) to send.
+     */
+    public void sendMove(int move) {
+        // Create a Request object with type SEND_MOVE
+        Request request = new Request();
+        request.setType(RequestType.SEND_MOVE);
+
+        // Serialize the move parameter using Gson
+        String serializedMove = gson.toJson(move);
+        request.setData(serializedMove);
+
+        // Send request asynchronously using AppExecutors
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+                Log.d("MainActivity", "Sent move: " + move + ", response: " + response);
+
+                // Handle response (optional)
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Log.d("MainActivity", "Move acknowledged by server");
+                    } else {
+                        Log.e("MainActivity", "Failed to send move to server");
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error sending move", e);
+            }
+        });
+    }
+
     private boolean isMyTurn() {
         return this.tttGame.getPlayer() == this.tttGame.getTurn();
     }
@@ -211,10 +244,20 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             Log.d("button clicked", "button clicked");
 
-            for (int row = 0; row < TicTacToe.SIDE; row++)
-                for (int column = 0; column < TicTacToe.SIDE; column++)
-                    if (v == buttons[row][column])
+            for (int row = 0; row < TicTacToe.SIDE; row++) {
+                for (int column = 0; column < TicTacToe.SIDE; column++) {
+                    if (v == buttons[row][column]) {
+                        // Calculate move index
+                        int move = row * TicTacToe.SIDE + column;
+
+                        // 1️⃣ Send move to server first
+                        sendMove(move);
+
+                        // 2️⃣ Then update board locally
                         update(row, column);
+                    }
+                }
+            }
         }
     }
 
