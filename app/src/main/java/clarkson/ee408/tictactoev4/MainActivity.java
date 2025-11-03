@@ -211,8 +211,9 @@ public class MainActivity extends AppCompatActivity {
             enableButtons(false);
             status.setText(tttGame.result());
             showNewGameDialog();    // offer to play again
+        } else {
+            updateTurnStatus();
         }
-        updateTurnStatus();
     }
 
     public void enableButtons(boolean enabled) {
