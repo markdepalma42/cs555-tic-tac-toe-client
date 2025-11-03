@@ -102,10 +102,7 @@ public class MainActivity extends AppCompatActivity {
         // Create a Request object with type SEND_MOVE
         Request request = new Request();
         request.setType(RequestType.SEND_MOVE);
-
-        // Serialize the move parameter using Gson
-        String serializedMove = gson.toJson(move);
-        request.setData(serializedMove);
+        request.setData("" + move);
 
         // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
@@ -250,10 +247,10 @@ public class MainActivity extends AppCompatActivity {
                         // Calculate move index
                         int move = row * TicTacToe.SIDE + column;
 
-                        // 1️⃣ Send move to server first
+                        // 1 - Send move to server first
                         sendMove(move);
 
-                        // 2️⃣ Then update board locally
+                        // 2 - Then update board locally
                         update(row, column);
                     }
                 }
