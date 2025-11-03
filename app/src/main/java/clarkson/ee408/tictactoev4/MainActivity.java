@@ -207,7 +207,11 @@ public class MainActivity extends AppCompatActivity {
         else if (play == 2)
             buttons[row][col].setText("O");
         if (tttGame.isGameOver()) {
-            status.setBackgroundColor(Color.RED);
+            if (this.tttGame.getPlayer() == this.tttGame.whoWon()) {
+                status.setBackgroundColor(Color.GREEN);
+            } else {
+                status.setBackgroundColor(Color.RED);
+            }
             enableButtons(false);
             status.setText(tttGame.result());
             showNewGameDialog();    // offer to play again
