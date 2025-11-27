@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         // Get player value from PairingActivity (default to 1 if not found)
-        int player = getIntent().getIntExtra("PLAYER", 1);
+        int player = getIntent().getIntExtra("player", 1);
 
         this.tttGame = new TicTacToe(player);
         this.gson = new GsonBuilder().serializeNulls().create();
