@@ -26,9 +26,6 @@ import clarkson.ee408.tictactoev4.socket.RequestType;
 import clarkson.ee408.tictactoev4.socket.ResponseStatus;
 
 public class MainActivity extends AppCompatActivity {
-
-    private static final int STARTING_PLAYER_NUMBER = 1;
-
     private TicTacToe tttGame;
     private Button[][] buttons;
     private TextView status;
@@ -39,7 +36,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.tttGame = new TicTacToe(STARTING_PLAYER_NUMBER);
+
+        // Get player value from PairingActivity (default to 1 if not found)
+        int player = getIntent().getIntExtra("PLAYER", 1);
+
+        this.tttGame = new TicTacToe(player);
         this.gson = new GsonBuilder().serializeNulls().create();
         socketClient = SocketClient.getInstance();
         shouldRequestMove = false;
@@ -267,9 +268,7 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(DialogInterface dialog, int id) {
             if (id == -1) /* YES button */ {
                 tttGame.resetGame();
-                int currentPlayer = tttGame.getPlayer();
-                int nextPlayer = (currentPlayer == 1) ? 2 : 1;
-                tttGame.setPlayer(nextPlayer);
+
                 enableButtons(true);
                 resetButtons();
                 status.setBackgroundColor(Color.GREEN);
