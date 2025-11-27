@@ -21,7 +21,7 @@ import java.util.List;
 import clarkson.ee408.tictactoev4.model.Event;
 import clarkson.ee408.tictactoev4.model.User;
 import clarkson.ee408.tictactoev4.socket.PairingResponse;
-import clarkson.ee408.tictactoev4.socket.SocketClient;
+import clarkson.ee408.tictactoev4.client.SocketClient;
 
 public class PairingActivity extends AppCompatActivity {
 
@@ -80,14 +80,28 @@ public class PairingActivity extends AppCompatActivity {
      * Send UPDATE_PAIRING request to the server
      */
     private void getPairingUpdate() {
-        //Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
-        SocketClient.getInstance().updatePairing(response -> {
-            if (response.getStatus().equals("SUCCESS")) {
-                PairingResponse pairing = gson.fromJson(response.getMessage(), PairingResponse.class);
-                runOnUiThread(() -> handlePairingUpdate(pairing));
-            } else {
-                runOnUiThread(() ->
-                        Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show());
+        // Create Request object with type UPDATE_PAIRING
+        Request request = new Request();
+        request.setType(RequestType.UPDATE_PAIRING);
+
+        // TODO: Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                PairingResponse pr = socketClient.sendRequest(request, PairingResponse.class);
+
+                if (pr == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, "Pairing update failed.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
+                }
+
+                AppExecutors.getInstance().mainThread().execute(() ->
+                        handlePairingUpdate(pr)
+                );
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating pairing", e);
             }
         });
     }
@@ -108,11 +122,11 @@ public class PairingActivity extends AppCompatActivity {
             sendAcknowledgement(invitationResponse);
 
             //If ACCEPTED → Toast + beginGame()
-            if (invitationResponse.getStatus().equals("ACCEPTED")) {
+            if (invitationResponse.getStatus() == ResponseStatus.ACCEPTED) {
                 Toast.makeText(this, invitationResponse.getSender() + " accepted your request!", Toast.LENGTH_SHORT).show();
                 beginGame(invitationResponse, 1);
 
-            } else if (invitationResponse.getStatus().equals("DECLINED")) {
+            } else if (invitationResponse.getStatus() == ResponseStatus.DECLINED) {
                 //If DECLINED → Toast message
                 Toast.makeText(this, invitationResponse.getSender() + " declined your request.", Toast.LENGTH_SHORT).show();
             }
@@ -148,7 +162,7 @@ public class PairingActivity extends AppCompatActivity {
         //SEND_INVITATION request → Toast success or error
         SocketClient.getInstance().sendInvitation(userOpponent, response -> {
             runOnUiThread(() -> {
-                if (response.getStatus().equals("SUCCESS")) {
+                if (response.getStatus() == ResponseStatus.SUCCESS) {
                     Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
@@ -190,7 +204,7 @@ public class PairingActivity extends AppCompatActivity {
         //Send ACCEPT_INVITATION. If SUCCESS beginGame(player=2)
         SocketClient.getInstance().acceptInvitation(invitation, response -> {
             runOnUiThread(() -> {
-                if (response.getStatus().equals("SUCCESS")) {
+                if (response.getStatus() == ResponseStatus.SUCCESS) {
                     beginGame(invitation, 2);
                 } else {
                     Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
@@ -206,7 +220,7 @@ public class PairingActivity extends AppCompatActivity {
         //DECLINE_INVITATION → Toast or error
         SocketClient.getInstance().declineInvitation(invitation, response -> {
             runOnUiThread(() -> {
-                if (response.getStatus().equals("SUCCESS")) {
+                if (response.getStatus() == ResponseStatus.SUCCESS) {
                     Toast.makeText(this, "Invitation declined.", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
