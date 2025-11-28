@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         this.tttGame = new TicTacToe(player);
         this.gson = new GsonBuilder().serializeNulls().create();
         socketClient = SocketClient.getInstance();
-        shouldRequestMove = false;
+        shouldRequestMove = true;
 
         buildGuiByCode();
         updateTurnStatus();
@@ -133,12 +133,10 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             if (isMyTurn()) {
                 status.setText("Your Turn");
-                shouldRequestMove = false;
                 enableButtons(true);
                 requestMove();
             } else {
                 status.setText("Waiting for Opponent");
-                shouldRequestMove = true;
                 enableButtons(false);
             }
         });
@@ -271,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
 
                 enableButtons(true);
                 resetButtons();
+                shouldRequestMove = true;
                 status.setBackgroundColor(Color.GREEN);
                 status.setText(tttGame.result());
                 updateTurnStatus();
