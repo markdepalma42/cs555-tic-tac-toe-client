@@ -1,6 +1,7 @@
 package clarkson.ee408.tictactoev4;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -12,6 +13,7 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
+import clarkson.ee408.tictactoev4.client.AppExecutors;
 import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.model.User;
 import clarkson.ee408.tictactoev4.socket.Request;
@@ -79,7 +81,7 @@ public class RegisterActivity extends AppCompatActivity {
      */
     void submitRegistration(User user) {
         // Send a REGISTER request to the server in a background thread
-        new Thread(() -> {
+        AppExecutors.getInstance().mainThread().execute(()  -> {
             try {
                 // serialize the user object to JSON
                 String userJson = gson.toJson(user);
@@ -102,10 +104,10 @@ public class RegisterActivity extends AppCompatActivity {
                     Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
 
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            };
-        }).start();
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error registering user", e);
+            }
+        });
     }
 
     /**
