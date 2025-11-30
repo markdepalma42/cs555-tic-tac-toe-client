@@ -18,10 +18,14 @@ import com.google.gson.GsonBuilder;
 
 import java.util.List;
 
+import clarkson.ee408.tictactoev4.client.AppExecutors;
+import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.model.Event;
+import clarkson.ee408.tictactoev4.model.EventStatus;
 import clarkson.ee408.tictactoev4.model.User;
 import clarkson.ee408.tictactoev4.socket.PairingResponse;
-import clarkson.ee408.tictactoev4.client.SocketClient;
+import clarkson.ee408.tictactoev4.socket.Request;
+import clarkson.ee408.tictactoev4.socket.RequestType;
 
 public class PairingActivity extends AppCompatActivity {
 
@@ -87,7 +91,7 @@ public class PairingActivity extends AppCompatActivity {
         // TODO: Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                PairingResponse pr = socketClient.sendRequest(request, PairingResponse.class);
+                PairingResponse pr = socketClient.getInstance().sendRequest(request, PairingResponse.class);
 
                 if (pr == null) {
                     AppExecutors.getInstance().mainThread().execute(() ->
@@ -108,6 +112,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Handle the PairingResponse received from the server
+     * @param response PairingResponse from the server
      */
     private void handlePairingUpdate(PairingResponse response) {
 
@@ -122,11 +127,11 @@ public class PairingActivity extends AppCompatActivity {
             sendAcknowledgement(invitationResponse);
 
             //If ACCEPTED → Toast + beginGame()
-            if (invitationResponse.getStatus() == ResponseStatus.ACCEPTED) {
+            if (invitationResponse.getStatus() == EventStatus.ACCEPTED) {
                 Toast.makeText(this, invitationResponse.getSender() + " accepted your request!", Toast.LENGTH_SHORT).show();
                 beginGame(invitationResponse, 1);
 
-            } else if (invitationResponse.getStatus() == ResponseStatus.DECLINED) {
+            } else if (invitationResponse.getStatus() == EventStatus.DECLINED) {
                 //If DECLINED → Toast message
                 Toast.makeText(this, invitationResponse.getSender() + " declined your request.", Toast.LENGTH_SHORT).show();
             }
@@ -140,6 +145,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Updates the list of available users
+     * @param availableUsers list of users that are available for pairing
      */
     public void updateAvailableUsers(List<User> availableUsers) {
         adapter.setUsers(availableUsers);
@@ -156,32 +162,78 @@ public class PairingActivity extends AppCompatActivity {
     }
 
     /**
-     * Sends game invitation
+     * Sends game invitation to an
+     * @param userOpponent the User to send invitation to
      */
     private void sendGameInvitation(User userOpponent) {
-        //SEND_INVITATION request → Toast success or error
-        SocketClient.getInstance().sendInvitation(userOpponent, response -> {
-            runOnUiThread(() -> {
-                if (response.getStatus() == ResponseStatus.SUCCESS) {
-                    Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show();
+        //Create request object with type SEND_INVITATION
+        Request request = new Request();
+        request.setType(RequestType.SEND_INVITATION);
+
+        //SEND_INVITATION request if successful, Toast success or error
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                InvitationResponse ir = socketClient.getInstance().sendRequest(request, InvitationResponse.class);
+
+                if (ir == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                    Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show());
                 } else {
-                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show());
                 }
-            });
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending invitation", e);
+            }
         });
     }
 
     /**
-     * ACKNOWLEDGE_RESPONSE
+     * Sends an ACKNOWLEDGE_RESPONSE request to the server
+     * Tell server i have received accept or declined response from my opponent
      */
     private void sendAcknowledgement(Event invitationResponse) {
-        //Send ACKNOWLEDGE_RESPONSE request to server
-        SocketClient.getInstance().sendAcknowledge(invitationResponse, r -> {
+
+        if (invitationResponse == null) {
+            Toast.makeText(this, "Invalid event.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Request request = new Request();
+        request.setType(RequestType.ACKNOWLEDGE_RESPONSE);
+        request.setData(String.valueOf(invitationResponse.getEventId()));
+
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = SocketClient.getInstance()
+                        .sendRequest(request, Response.class);
+
+                if (response == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, "Acknowledge failed.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
+                }
+
+                if (response.getStatus() == ResponseStatus.SUCCESS) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            handleAcknowledgeResponse(invitationResponse)
+                    );
+                } else {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error acknowledging response", e);
+            }
         });
     }
 
     /**
-     * Create incoming invitation dialog
+     * Create a dialog showing incoming invitation
+     * @param invitation the Event of an invitation
      */
     private void createRespondAlertDialog(Event invitation) {
 
@@ -198,42 +250,97 @@ public class PairingActivity extends AppCompatActivity {
     }
 
     /**
-     * Accept invitation
+     * Sends an ACCEPT_INVITATION to the server
+     * @param invitation the Event invitation to accept
      */
     private void acceptInvitation(Event invitation) {
-        //Send ACCEPT_INVITATION. If SUCCESS beginGame(player=2)
-        SocketClient.getInstance().acceptInvitation(invitation, response -> {
-            runOnUiThread(() -> {
-                if (response.getStatus() == ResponseStatus.SUCCESS) {
-                    beginGame(invitation, 2);
-                } else {
-                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+
+        if (invitation == null) {
+            Toast.makeText(this, "Invalid invitation.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Request request = new Request();
+        request.setType(RequestType.ACCEPT_INVITATION);
+        request.setData(String.valueOf(invitation.getEventId()));
+
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = SocketClient.getInstance()
+                        .sendRequest(request, Response.class);
+
+                if (response == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, "Accept invitation failed.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
                 }
-            });
+
+                if (response.getStatus() == ResponseStatus.SUCCESS) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            handleAcceptInvitation(invitation)
+                    );
+                } else {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error accepting invitation", e);
+            }
         });
     }
 
+
     /**
-     * Decline invitation
+     * Sends an DECLINE_INVITATION to the server
+     * @param invitation the Event invitation to decline
      */
     private void declineInvitation(Event invitation) {
-        //DECLINE_INVITATION → Toast or error
-        SocketClient.getInstance().declineInvitation(invitation, response -> {
-            runOnUiThread(() -> {
-                if (response.getStatus() == ResponseStatus.SUCCESS) {
-                    Toast.makeText(this, "Invitation declined.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
 
-        //Set shouldUpdatePairing to true after sending decline
-        shouldUpdatePairing = true;
+        if (invitation == null) {
+            Toast.makeText(this, "Invalid invitation.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Request request = new Request();
+        request.setType(RequestType.DECLINE_INVITATION);
+        request.setData(String.valueOf(invitation.getEventId()));
+
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = SocketClient.getInstance()
+                        .sendRequest(request, Response.class);
+
+                if (response == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, "Decline invitation failed.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
+                }
+
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response.getStatus() == ResponseStatus.SUCCESS) {
+                        Toast.makeText(this, "Invitation declined.", Toast.LENGTH_SHORT).show();
+                        shouldUpdatePairing = true;   // required by TODO
+                    } else {
+                        Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error declining invitation", e);
+            }
+        });
     }
 
+
+
     /**
-     * Begin the game in MainActivity
+     *
+     * @param pairing the Event of pairing
+     * @param player either 1 or 2
      */
     private void beginGame(Event pairing, int player) {
 
