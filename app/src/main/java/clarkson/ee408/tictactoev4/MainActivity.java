@@ -75,6 +75,18 @@ public class MainActivity extends AppCompatActivity {
                 // Process response in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
                     if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+
+                        // Check if game is not active
+                        if (!response.getActive()) {
+                            // Game is inactive - end the game
+                            status.setText(response.getMessage());
+                            status.setBackgroundColor(Color.RED);
+                            enableButtons(false);
+                            shouldRequestMove = false;
+                            tttGame = null;
+                            return; // Exit early, don't process moves
+                        }
+
                         // Get the move from GamingResponse (already parsed)
                         int moveValue = response.getMove();
 
