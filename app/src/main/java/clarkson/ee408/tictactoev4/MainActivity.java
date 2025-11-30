@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                     if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
 
                         // Check if game is not active
-                        if (!response.isActive()) {
+                        if (!response.getActive()) {
                             // Game is inactive - end the game
                             status.setText(response.getMessage());
                             status.setBackgroundColor(Color.RED);
