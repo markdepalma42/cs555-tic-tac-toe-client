@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private Gson gson;
     private boolean shouldRequestMove;
     private SocketClient socketClient;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         buildGuiByCode();
         updateTurnStatus();
 
-        Handler handler = new Handler();
+        handler = new Handler();
         GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
         handler.post(runnable);
     }
@@ -135,6 +136,73 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("MainActivity", "Error sending move", e);
             }
         });
+    }
+
+    /**
+     * Called when the user aborts an ongoing game
+     */
+    private void abortGame() {
+        Log.d("MainActivity", "Aborting game");
+        // Create a Request object with type ABORT_GAME
+        Request request = new Request();
+        request.setType(RequestType.ABORT_GAME);
+        request.setData(""); // No additional data needed
+
+        // Send request asynchronously
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+                Log.d("MainActivity", "Game aborted, response: " + response);
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error aborting game", e);
+            }
+        });
+    }
+
+    /**
+     * Called when the game is completed normally
+     */
+    private void completeGame() {
+        Log.d("MainActivity", "Completing game");
+        // Create a Request object with type COMPLETE_GAME
+        Request request = new Request();
+        request.setType(RequestType.COMPLETE_GAME);
+        request.setData(""); // No additional data needed
+
+        // Send request asynchronously
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+                Log.d("MainActivity", "Game completed, response: " + response);
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error completing game", e);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Call parent's onDestroy first
+        super.onDestroy();
+
+        // Stop the repetitive Handler
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
+
+        // Check game state and call appropriate method
+        if (tttGame != null) {
+            if (tttGame.isGameOver()) {
+                completeGame(); // Game ended normally
+            } else {
+                abortGame(); // Game was aborted
+            }
+        } else {
+            // If tttGame is null, the game was already ended. So it is safe to call abort just in case
+            abortGame();
+        }
+
+        Log.d("MainActivity", "Activity destroyed");
     }
 
     private boolean isMyTurn() {
