@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -139,43 +140,93 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Called when the user aborts an ongoing game
+     * Sends ABORT_GAME request to server when user leaves an ongoing game
      */
     private void abortGame() {
-        Log.d("MainActivity", "Aborting game");
+        Log.d("MainActivity", "Sending ABORT_GAME request");
+
         // Create a Request object with type ABORT_GAME
         Request request = new Request();
         request.setType(RequestType.ABORT_GAME);
         request.setData(""); // No additional data needed
 
-        // Send request asynchronously
+        // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
                 GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
-                Log.d("MainActivity", "Game aborted, response: " + response);
+
+                // Process response in main thread to show Toast
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Toast.makeText(MainActivity.this,
+                                "Game aborted successfully",
+                                Toast.LENGTH_SHORT).show();
+                        Log.d("MainActivity", "Game aborted successfully");
+                    } else {
+                        String errorMsg = "Failed to abort game";
+                        if (response != null && response.getMessage() != null) {
+                            errorMsg = response.getMessage();
+                        }
+                        Toast.makeText(MainActivity.this,
+                                errorMsg,
+                                Toast.LENGTH_SHORT).show();
+                        Log.e("MainActivity", errorMsg);
+                    }
+                });
             } catch (Exception e) {
                 Log.e("MainActivity", "Error aborting game", e);
+                // Show Toast in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    Toast.makeText(MainActivity.this,
+                            "Error connecting to server",
+                            Toast.LENGTH_SHORT).show();
+                });
             }
         });
     }
 
     /**
-     * Called when the game is completed normally
+     * Sends COMPLETE_GAME request to server when user leaves after game completion
      */
     private void completeGame() {
-        Log.d("MainActivity", "Completing game");
+        Log.d("MainActivity", "Sending COMPLETE_GAME request");
+
         // Create a Request object with type COMPLETE_GAME
         Request request = new Request();
         request.setType(RequestType.COMPLETE_GAME);
         request.setData(""); // No additional data needed
 
-        // Send request asynchronously
+        // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
                 GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
-                Log.d("MainActivity", "Game completed, response: " + response);
+
+                // Process response in main thread to show Toast
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Toast.makeText(MainActivity.this,
+                                "Game completed successfully",
+                                Toast.LENGTH_SHORT).show();
+                        Log.d("MainActivity", "Game completed successfully");
+                    } else {
+                        String errorMsg = "Failed to complete game";
+                        if (response != null && response.getMessage() != null) {
+                            errorMsg = response.getMessage();
+                        }
+                        Toast.makeText(MainActivity.this,
+                                errorMsg,
+                                Toast.LENGTH_SHORT).show();
+                        Log.e("MainActivity", errorMsg);
+                    }
+                });
             } catch (Exception e) {
                 Log.e("MainActivity", "Error completing game", e);
+                // Show Toast in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    Toast.makeText(MainActivity.this,
+                            "Error connecting to server",
+                            Toast.LENGTH_SHORT).show();
+                });
             }
         });
     }
