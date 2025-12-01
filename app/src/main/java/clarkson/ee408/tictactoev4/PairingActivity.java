@@ -26,6 +26,8 @@ import clarkson.ee408.tictactoev4.model.User;
 import clarkson.ee408.tictactoev4.socket.PairingResponse;
 import clarkson.ee408.tictactoev4.socket.Request;
 import clarkson.ee408.tictactoev4.socket.RequestType;
+import clarkson.ee408.tictactoev4.socket.Response;
+import clarkson.ee408.tictactoev4.socket.ResponseStatus;
 
 public class PairingActivity extends AppCompatActivity {
 
@@ -112,6 +114,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Handle the PairingResponse received from the server
+     *
      * @param response PairingResponse from the server
      */
     private void handlePairingUpdate(PairingResponse response) {
@@ -145,6 +148,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Updates the list of available users
+     *
      * @param availableUsers list of users that are available for pairing
      */
     public void updateAvailableUsers(List<User> availableUsers) {
@@ -163,6 +167,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Sends game invitation to an
+     *
      * @param userOpponent the User to send invitation to
      */
     private void sendGameInvitation(User userOpponent) {
@@ -173,14 +178,14 @@ public class PairingActivity extends AppCompatActivity {
         //SEND_INVITATION request if successful, Toast success or error
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                Response ir = SocketClient.getInstance().sendRequest(request, InvitationResponse.class);
+                Response ir = SocketClient.getInstance().sendRequest(request, Response.class);
 
                 if (ir == null) {
                     AppExecutors.getInstance().mainThread().execute(() ->
-                    Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show());
+                            Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show());
                 } else {
                     AppExecutors.getInstance().mainThread().execute(() ->
-                    Toast.makeText(this, ir.getMessage(), Toast.LENGTH_SHORT).show());
+                            Toast.makeText(this, ir.getMessage(), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error sending invitation", e);
@@ -233,6 +238,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Create a dialog showing incoming invitation
+     *
      * @param invitation the Event of an invitation
      */
     private void createRespondAlertDialog(Event invitation) {
@@ -251,6 +257,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Sends an ACCEPT_INVITATION to the server
+     *
      * @param invitation the Event invitation to accept
      */
     private void acceptInvitation(Event invitation) {
@@ -295,6 +302,7 @@ public class PairingActivity extends AppCompatActivity {
 
     /**
      * Sends an DECLINE_INVITATION to the server
+     *
      * @param invitation the Event invitation to decline
      */
     private void declineInvitation(Event invitation) {
@@ -336,11 +344,11 @@ public class PairingActivity extends AppCompatActivity {
     }
 
 
-
     /**
      * Begin the game in MainActivity
+     *
      * @param pairing the Event of pairing
-     * @param player either 1 or 2
+     * @param player  either 1 or 2
      */
     private void beginGame(Event pairing, int player) {
 
