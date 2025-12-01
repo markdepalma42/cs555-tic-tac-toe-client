@@ -91,7 +91,7 @@ public class PairingActivity extends AppCompatActivity {
         // TODO: Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                PairingResponse pr = socketClient.getInstance().sendRequest(request, PairingResponse.class);
+                PairingResponse pr = SocketClient.getInstance().sendRequest(request, PairingResponse.class);
 
                 if (pr == null) {
                     AppExecutors.getInstance().mainThread().execute(() ->
@@ -173,14 +173,14 @@ public class PairingActivity extends AppCompatActivity {
         //SEND_INVITATION request if successful, Toast success or error
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                InvitationResponse ir = socketClient.getInstance().sendRequest(request, InvitationResponse.class);
+                Response ir = SocketClient.getInstance().sendRequest(request, InvitationResponse.class);
 
                 if (ir == null) {
                     AppExecutors.getInstance().mainThread().execute(() ->
                     Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show());
                 } else {
                     AppExecutors.getInstance().mainThread().execute(() ->
-                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show());
+                    Toast.makeText(this, ir.getMessage(), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error sending invitation", e);
@@ -217,7 +217,7 @@ public class PairingActivity extends AppCompatActivity {
 
                 if (response.getStatus() == ResponseStatus.SUCCESS) {
                     AppExecutors.getInstance().mainThread().execute(() ->
-                            handleAcknowledgeResponse(invitationResponse)
+                            Toast.makeText(this, "Acknowledge sent successfully.", Toast.LENGTH_SHORT).show()
                     );
                 } else {
                     AppExecutors.getInstance().mainThread().execute(() ->
@@ -278,7 +278,7 @@ public class PairingActivity extends AppCompatActivity {
 
                 if (response.getStatus() == ResponseStatus.SUCCESS) {
                     AppExecutors.getInstance().mainThread().execute(() ->
-                            handleAcceptInvitation(invitation)
+                            beginGame(invitation, 2)
                     );
                 } else {
                     AppExecutors.getInstance().mainThread().execute(() ->
@@ -338,7 +338,7 @@ public class PairingActivity extends AppCompatActivity {
 
 
     /**
-     *
+     * Begin the game in MainActivity
      * @param pairing the Event of pairing
      * @param player either 1 or 2
      */
