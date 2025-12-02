@@ -11,8 +11,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
-
 import clarkson.ee408.tictactoev4.client.AppExecutors;
 import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.model.User;
@@ -60,14 +58,14 @@ public class RegisterActivity extends AppCompatActivity {
         String displayName = displayNameField.getText().toString();
 
         // verify that all fields are not empty before proceeding
-        if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || displayName.isEmpty()) {
-            Toast.makeText(this, "fields can not be empty", Toast.LENGTH_SHORT).show();
+        if (username.isBlank() || password.isBlank() || confirmPassword.isBlank() || displayName.isBlank()) {
+            Toast.makeText(this, "Fields can not be empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // verify that password is the same af confirm password
+        // verify that password is the same as confirm password
         if (!password.equals(confirmPassword)) {
-            Toast.makeText(this, "passwords do not match", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -81,7 +79,7 @@ public class RegisterActivity extends AppCompatActivity {
      */
     void submitRegistration(User user) {
         // Send a REGISTER request to the server in a background thread
-        AppExecutors.getInstance().mainThread().execute(()  -> {
+        AppExecutors.getInstance().networkIO().execute(()  -> {
             try {
                 // serialize the user object to JSON
                 String userJson = gson.toJson(user);
@@ -94,17 +92,24 @@ public class RegisterActivity extends AppCompatActivity {
 
                 if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
                     // if success response, call goBackLogin()
-                    Toast.makeText(RegisterActivity.this, "registration was successful", Toast.LENGTH_SHORT).show();
-                    goBackLogin();
-                } else {
+                    AppExecutors.getInstance().mainThread().execute(() -> {
+                        Toast.makeText(RegisterActivity.this, "Registration was successful", Toast.LENGTH_SHORT).show();
+                        goBackLogin();
+                    });
+                }
+                    else {
                     // toast the error message
                     String errorMessage = (response != null && response.getMessage() != null)
                             ? response.getMessage()
-                            : "registration failed";
-                    Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                            : "Registration failed";
+                    AppExecutors.getInstance().mainThread().execute(() -> {
+                        Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                    });
                 }
-
             } catch (Exception e) {
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    Toast.makeText(RegisterActivity.this, "Error registering user", Toast.LENGTH_SHORT).show();
+                });
                 Log.e("MainActivity", "Error registering user", e);
             }
         });
