@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean shouldRequestMove;
     private SocketClient socketClient;
     private Handler handler;
+    private GameMoveTaskRunnable gameMoveTaskRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
         updateTurnStatus();
 
         handler = new Handler();
-        GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
-        handler.post(runnable);
+        gameMoveTaskRunnable = new GameMoveTaskRunnable(this, handler);
+        handler.post(gameMoveTaskRunnable);
     }
 
     /**
@@ -148,12 +149,11 @@ public class MainActivity extends AppCompatActivity {
         // Create a Request object with type ABORT_GAME
         Request request = new Request();
         request.setType(RequestType.ABORT_GAME);
-        request.setData(""); // No additional data needed
 
         // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+                Response response = socketClient.sendRequest(request, Response.class);
 
                 // Process response in main thread to show Toast
                 AppExecutors.getInstance().mainThread().execute(() -> {
@@ -178,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                 // Show Toast in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
                     Toast.makeText(MainActivity.this,
-                            "Error connecting to server",
+                            "Error sending abort game request",
                             Toast.LENGTH_SHORT).show();
                 });
             }
@@ -194,12 +194,11 @@ public class MainActivity extends AppCompatActivity {
         // Create a Request object with type COMPLETE_GAME
         Request request = new Request();
         request.setType(RequestType.COMPLETE_GAME);
-        request.setData(""); // No additional data needed
 
         // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
-                GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+                Response response = socketClient.sendRequest(request, Response.class);
 
                 // Process response in main thread to show Toast
                 AppExecutors.getInstance().mainThread().execute(() -> {
@@ -224,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
                 // Show Toast in main thread
                 AppExecutors.getInstance().mainThread().execute(() -> {
                     Toast.makeText(MainActivity.this,
-                            "Error connecting to server",
+                            "Error sending complete game request",
                             Toast.LENGTH_SHORT).show();
                 });
             }
@@ -238,6 +237,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Stop the repetitive Handler
         if (handler != null) {
+            // Remove the specific runnable
+            if (gameMoveTaskRunnable != null) {
+                handler.removeCallbacks(gameMoveTaskRunnable); // Use specific runnable
+            }
+            // Also remove any other callbacks/messages
             handler.removeCallbacksAndMessages(null);
         }
 
