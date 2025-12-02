@@ -24,6 +24,7 @@ import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.socket.GamingResponse;
 import clarkson.ee408.tictactoev4.socket.Request;
 import clarkson.ee408.tictactoev4.socket.RequestType;
+import clarkson.ee408.tictactoev4.socket.Response;
 import clarkson.ee408.tictactoev4.socket.ResponseStatus;
 
 public class MainActivity extends AppCompatActivity {
