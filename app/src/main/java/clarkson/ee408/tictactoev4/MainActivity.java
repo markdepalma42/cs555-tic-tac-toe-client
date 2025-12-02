@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,7 @@ import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.socket.GamingResponse;
 import clarkson.ee408.tictactoev4.socket.Request;
 import clarkson.ee408.tictactoev4.socket.RequestType;
+import clarkson.ee408.tictactoev4.socket.Response;
 import clarkson.ee408.tictactoev4.socket.ResponseStatus;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     private Gson gson;
     private boolean shouldRequestMove;
     private SocketClient socketClient;
+    private Handler handler;
+    private GameMoveTaskRunnable gameMoveTaskRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,9 +52,9 @@ public class MainActivity extends AppCompatActivity {
         buildGuiByCode();
         updateTurnStatus();
 
-        Handler handler = new Handler();
-        GameMoveTaskRunnable runnable = new GameMoveTaskRunnable(this, handler);
-        handler.post(runnable);
+        handler = new Handler();
+        gameMoveTaskRunnable = new GameMoveTaskRunnable(this, handler);
+        handler.post(gameMoveTaskRunnable);
     }
 
     /**
@@ -135,6 +139,126 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("MainActivity", "Error sending move", e);
             }
         });
+    }
+
+    /**
+     * Sends ABORT_GAME request to server when user leaves an ongoing game
+     */
+    private void abortGame() {
+        Log.d("MainActivity", "Sending ABORT_GAME request");
+
+        // Create a Request object with type ABORT_GAME
+        Request request = new Request();
+        request.setType(RequestType.ABORT_GAME);
+
+        // Send request asynchronously using AppExecutors
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = socketClient.sendRequest(request, Response.class);
+
+                // Process response in main thread to show Toast
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Toast.makeText(MainActivity.this,
+                                "Game aborted successfully",
+                                Toast.LENGTH_SHORT).show();
+                        Log.d("MainActivity", "Game aborted successfully");
+                    } else {
+                        String errorMsg = "Failed to abort game";
+                        if (response != null && response.getMessage() != null) {
+                            errorMsg = response.getMessage();
+                        }
+                        Toast.makeText(MainActivity.this,
+                                errorMsg,
+                                Toast.LENGTH_SHORT).show();
+                        Log.e("MainActivity", errorMsg);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error aborting game", e);
+                // Show Toast in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    Toast.makeText(MainActivity.this,
+                            "Error sending abort game request",
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    /**
+     * Sends COMPLETE_GAME request to server when user leaves after game completion
+     */
+    private void completeGame() {
+        Log.d("MainActivity", "Sending COMPLETE_GAME request");
+
+        // Create a Request object with type COMPLETE_GAME
+        Request request = new Request();
+        request.setType(RequestType.COMPLETE_GAME);
+
+        // Send request asynchronously using AppExecutors
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            try {
+                Response response = socketClient.sendRequest(request, Response.class);
+
+                // Process response in main thread to show Toast
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    if (response != null && response.getStatus() == ResponseStatus.SUCCESS) {
+                        Toast.makeText(MainActivity.this,
+                                "Game completed successfully",
+                                Toast.LENGTH_SHORT).show();
+                        Log.d("MainActivity", "Game completed successfully");
+                    } else {
+                        String errorMsg = "Failed to complete game";
+                        if (response != null && response.getMessage() != null) {
+                            errorMsg = response.getMessage();
+                        }
+                        Toast.makeText(MainActivity.this,
+                                errorMsg,
+                                Toast.LENGTH_SHORT).show();
+                        Log.e("MainActivity", errorMsg);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error completing game", e);
+                // Show Toast in main thread
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    Toast.makeText(MainActivity.this,
+                            "Error sending complete game request",
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Call parent's onDestroy first
+        super.onDestroy();
+
+        // Stop the repetitive Handler
+        if (handler != null) {
+            // Remove the specific runnable
+            if (gameMoveTaskRunnable != null) {
+                handler.removeCallbacks(gameMoveTaskRunnable); // Use specific runnable
+            }
+            // Also remove any other callbacks/messages
+            handler.removeCallbacksAndMessages(null);
+        }
+
+        // Check game state and call appropriate method
+        if (tttGame != null) {
+            if (tttGame.isGameOver()) {
+                completeGame(); // Game ended normally
+            } else {
+                abortGame(); // Game was aborted
+            }
+        } else {
+            // If tttGame is null, the game was already ended. So it is safe to call abort just in case
+            abortGame();
+        }
+
+        Log.d("MainActivity", "Activity destroyed");
     }
 
     private boolean isMyTurn() {
