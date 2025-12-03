@@ -90,12 +90,12 @@ public class PairingActivity extends AppCompatActivity {
         Request request = new Request();
         request.setType(RequestType.UPDATE_PAIRING);
 
-        // TODO: Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
+        // Send an UPDATE_PAIRING request to the server. If SUCCESS call handlePairingUpdate(). Else, Toast the error
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
                 PairingResponse pr = SocketClient.getInstance().sendRequest(request, PairingResponse.class);
 
-                if (pr == null) {
+                if ((pr == null) || (pr.getStatus() == ResponseStatus.FAILURE)) {
                     AppExecutors.getInstance().mainThread().execute(() ->
                             Toast.makeText(this, "Pairing update failed.", Toast.LENGTH_SHORT).show()
                     );
@@ -166,7 +166,7 @@ public class PairingActivity extends AppCompatActivity {
     }
 
     /**
-     * Sends game invitation to an
+     * Sends game invitation to an opponent.
      *
      * @param userOpponent the User to send invitation to
      */
@@ -181,6 +181,12 @@ public class PairingActivity extends AppCompatActivity {
                 Response ir = SocketClient.getInstance().sendRequest(request, Response.class);
 
                 if (ir == null) {
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            Toast.makeText(this, "Failure sending invitation.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
+                }
+                if (ir.getStatus() == ResponseStatus.SUCCESS) {
                     AppExecutors.getInstance().mainThread().execute(() ->
                             Toast.makeText(this, "Invitation sent to " + userOpponent.getUsername(), Toast.LENGTH_SHORT).show());
                 } else {
