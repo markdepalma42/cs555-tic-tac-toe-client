@@ -384,7 +384,14 @@ public class PairingActivity extends AppCompatActivity {
 
         shouldUpdatePairing = false;
 
-        //Logout by calling close() of SocketClient
-        SocketClient.getInstance().close();
+        // Logout by calling close() of SocketClient
+
+        /*
+         * Note: Even though calling SocketClient#close() is a TO-DO in the original code, it is
+         * removed since the socket will still be needed by other activities. Also, the server
+         * aborts all user events and marks the user offline, which causes problems for the pairing
+         * process.
+         */
+        // SocketClient.getInstance().close();
     }
 }
