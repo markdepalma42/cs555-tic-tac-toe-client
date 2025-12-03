@@ -69,7 +69,7 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        User user = new User(username, displayName, password, false);
+        User user = new User(username, password, displayName, false);
         submitRegistration(user);
     }
 

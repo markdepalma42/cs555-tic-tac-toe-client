@@ -19,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.IOException;
+
 import clarkson.ee408.tictactoev4.client.AppExecutors;
 import clarkson.ee408.tictactoev4.client.SocketClient;
 import clarkson.ee408.tictactoev4.socket.GamingResponse;
@@ -154,6 +156,11 @@ public class MainActivity extends AppCompatActivity {
         // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
+                // Don't send an ABORT_GAME request if the game is already inactive
+                if (checkGameIsInactive()) {
+                    return;
+                }
+
                 Response response = socketClient.sendRequest(request, Response.class);
 
                 // Process response in main thread to show Toast
@@ -199,6 +206,11 @@ public class MainActivity extends AppCompatActivity {
         // Send request asynchronously using AppExecutors
         AppExecutors.getInstance().networkIO().execute(() -> {
             try {
+                // Don't send a COMPLETE_GAME request if the game is already inactive
+                if (checkGameIsInactive()) {
+                    return;
+                }
+
                 Response response = socketClient.sendRequest(request, Response.class);
 
                 // Process response in main thread to show Toast
@@ -229,6 +241,13 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    private boolean checkGameIsInactive() throws IOException {
+        Request request = new Request();
+        request.setType(RequestType.REQUEST_MOVE);
+        GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+        return response == null || !response.getActive();
     }
 
     @Override

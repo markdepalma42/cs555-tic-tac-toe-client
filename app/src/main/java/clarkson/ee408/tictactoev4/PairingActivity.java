@@ -131,12 +131,11 @@ public class PairingActivity extends AppCompatActivity {
 
             //If ACCEPTED → Toast + beginGame()
             if (invitationResponse.getStatus() == EventStatus.ACCEPTED) {
-                Toast.makeText(this, invitationResponse.getSender() + " accepted your request!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, invitationResponse.getOpponent() + " accepted your request!", Toast.LENGTH_SHORT).show();
                 beginGame(invitationResponse, 1);
-
             } else if (invitationResponse.getStatus() == EventStatus.DECLINED) {
                 //If DECLINED → Toast message
-                Toast.makeText(this, invitationResponse.getSender() + " declined your request.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, invitationResponse.getOpponent() + " declined your request.", Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -174,6 +173,7 @@ public class PairingActivity extends AppCompatActivity {
         //Create request object with type SEND_INVITATION
         Request request = new Request();
         request.setType(RequestType.SEND_INVITATION);
+        request.setData(userOpponent.getUsername());
 
         //SEND_INVITATION request if successful, Toast success or error
         AppExecutors.getInstance().networkIO().execute(() -> {
@@ -384,7 +384,14 @@ public class PairingActivity extends AppCompatActivity {
 
         shouldUpdatePairing = false;
 
-        //Logout by calling close() of SocketClient
-        SocketClient.getInstance().close();
+        // Logout by calling close() of SocketClient
+
+        /*
+         * Note: Even though calling SocketClient#close() is a TO-DO in the original code, it is
+         * removed since the socket will still be needed by other activities. Also, the server
+         * aborts all user events and marks the user offline, which causes problems for the pairing
+         * process.
+         */
+        // SocketClient.getInstance().close();
     }
 }
