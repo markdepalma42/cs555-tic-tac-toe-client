@@ -96,8 +96,7 @@ public class RegisterActivity extends AppCompatActivity {
                         Toast.makeText(RegisterActivity.this, "Registration was successful", Toast.LENGTH_SHORT).show();
                         goBackLogin();
                     });
-                }
-                    else {
+                } else {
                     // toast the error message
                     String errorMessage = (response != null && response.getMessage() != null)
                             ? response.getMessage()
