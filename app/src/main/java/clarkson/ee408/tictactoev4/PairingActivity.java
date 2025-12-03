@@ -131,12 +131,11 @@ public class PairingActivity extends AppCompatActivity {
 
             //If ACCEPTED → Toast + beginGame()
             if (invitationResponse.getStatus() == EventStatus.ACCEPTED) {
-                Toast.makeText(this, invitationResponse.getSender() + " accepted your request!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, invitationResponse.getOpponent() + " accepted your request!", Toast.LENGTH_SHORT).show();
                 beginGame(invitationResponse, 1);
-
             } else if (invitationResponse.getStatus() == EventStatus.DECLINED) {
                 //If DECLINED → Toast message
-                Toast.makeText(this, invitationResponse.getSender() + " declined your request.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, invitationResponse.getOpponent() + " declined your request.", Toast.LENGTH_SHORT).show();
             }
         }
 
