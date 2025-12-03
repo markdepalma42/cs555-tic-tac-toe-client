@@ -174,6 +174,7 @@ public class PairingActivity extends AppCompatActivity {
         //Create request object with type SEND_INVITATION
         Request request = new Request();
         request.setType(RequestType.SEND_INVITATION);
+        request.setData(userOpponent.getUsername());
 
         //SEND_INVITATION request if successful, Toast success or error
         AppExecutors.getInstance().networkIO().execute(() -> {
