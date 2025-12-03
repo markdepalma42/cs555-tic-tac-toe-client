@@ -116,7 +116,7 @@ public final class SocketClient {
 
     private void connect() throws IOException {
         // Synchronization is handled by the caller
-        if (this.socket == null || !this.socket.isConnected()) {
+        if (this.socket == null || !this.socket.isConnected() || this.socket.isClosed()) {
             // Create socket and connect
             this.socket = new Socket();
             this.socket.connect(new InetSocketAddress(SERVER_HOST, SERVER_PORT));
